@@ -36,7 +36,7 @@ Browser --> frontend (nginx) --> backend (Express) --> mongo (MongoDB)
 
 ```
 .
-├── compose.yaml
+├── docker-compose.yaml
 ├── .env.example            # required variables (the real .env is not committed)
 ├── backend/
 │   ├── Dockerfile
@@ -92,7 +92,7 @@ Values are read from `.env` (see `.env.example`):
 | `MONGO_ROOT_USER` | `mongo`, `backend` | MongoDB root username |
 | `MONGO_ROOT_PASSWORD` | `mongo`, `backend` | MongoDB root password |
 
-The backend receives these environment variables from `compose.yaml`:
+The backend receives these environment variables from `docker-compose.yaml`:
 
 | Variable | Value | Purpose |
 |---|---|---|
@@ -154,7 +154,7 @@ To run the published images without building (only `compose.deploy.yaml` and a `
 docker compose -f compose.deploy.yaml up -d
 ```
 
-For development, `compose.yaml` uses `build:` so changes are built from source. A machine that only needs to run the app can use `image:` entries instead, and needs just a compose file and a `.env`, with no source code.
+For development, `docker-compose.yaml` uses `build:` so changes are built from source. A machine that only needs to run the app can use `image:` entries instead, and needs just a compose file and a `.env`, with no source code.
 
 ## API
 
