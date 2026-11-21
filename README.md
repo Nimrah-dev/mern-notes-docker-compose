@@ -62,7 +62,7 @@ Browser --> frontend (nginx) --> backend (Express) --> mongo (MongoDB)
 
 ```bash
 git clone https://github.com/Nimrah-dev/mern-notes-docker-compose.git
-cd docker-compose-project
+cd mern-notes-docker-compose
 
 # create the .env file with a random password (see .env.example)
 echo "MONGO_ROOT_USER=notesadmin" > .env
