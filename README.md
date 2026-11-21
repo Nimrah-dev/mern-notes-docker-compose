@@ -15,8 +15,8 @@ Browser --> frontend (nginx) --> backend (Express) --> mongo (MongoDB)
 
 | Service | Image | Networks | Role |
 |---|---|---|---|
-| `frontend` | built from `frontend/Dockerfile` | `front` | Serves the React build with nginx and proxies `/api` to the backend |
-| `backend` | built from `backend/Dockerfile` | `front`, `back` | REST API for notes (Express + Mongoose) |
+| `frontend` | `nimrahsaif/notes-frontend:1.0` (built from `frontend/Dockerfile`) | `front` | Serves the React build with nginx and proxies `/api` to the backend |
+| `backend` | `nimrahsaif/notes-backend:1.0` (built from `backend/Dockerfile`) | `front`, `back` | REST API for notes (Express + Mongoose) |
 | `mongo` | `mongo:7` | `back` | Database with authentication, data stored in a named volume |
 
 ## Key design decisions
@@ -26,17 +26,18 @@ Browser --> frontend (nginx) --> backend (Express) --> mongo (MongoDB)
 - **nginx as a reverse proxy.** The browser calls relative paths like `/api/notes`, and nginx forwards them to `http://backend:5000`. The browser never needs the backend hostname, and no CORS configuration is required.
 - **Multi-stage frontend build.** Node builds the React app in the first stage. The final image contains only nginx and the static files.
 - **Service names as hostnames.** Compose provides DNS by service name, so the backend connects to `mongo:27017` and nginx reaches `backend:5000`.
-- **Credentials from `.env`.** MongoDB authentication is enabled, and the username and password are read from a `.env` file that is not committed. Compose fails fast if they are missing.
+- **Credentials from `.env`.** MongoDB authentication is enabled, and the username and password are read from a `.env` file that is not committed.
 - **Persistent data.** MongoDB writes to `/data/db`, which is mounted from the named volume `mongodata`.
 - **Health-based start order.** `mongo` has a health check (`mongosh` ping), the backend has one too (`/api/health`), and each service waits for the previous one with `condition: service_healthy`.
 - **Restart policy.** All services use `restart: unless-stopped`.
 - **Layer caching.** In both Dockerfiles `package.json` is copied and installed before the source code, so dependencies are not reinstalled on every code change.
+- **Pre-built images.** The images are pushed to Docker Hub, so `docker-compose.yaml` runs the app from them without needing any source code.
 
 ## Project structure
 
 ```
 .
-├── docker-compose.yaml
+├── docker-compose.yaml     # runs the published images from Docker Hub
 ├── .env.example            # required variables (the real .env is not committed)
 ├── backend/
 │   ├── Dockerfile
@@ -68,7 +69,7 @@ cd mern-notes-docker-compose
 echo "MONGO_ROOT_USER=notesadmin" > .env
 echo "MONGO_ROOT_PASSWORD=$(openssl rand -hex 12)" >> .env
 
-docker compose up -d --build
+docker compose up -d
 docker compose ps
 ```
 
@@ -140,21 +141,22 @@ docker compose exec mongo sh -c 'mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$M
 - Do not run `docker compose config` and share its output, because it prints resolved values including the password.
 - This is a learning setup. For a real deployment, use a dedicated database user with limited permissions instead of the root user, and put TLS in front of the frontend.
 
-## Published images
+## Docker images
 
-Pre-built images are available on Docker Hub:
+The images are published on Docker Hub, and `docker-compose.yaml` uses them directly, so a machine that only needs to run the app needs just the compose file and a `.env`, with no source code:
 
 ```bash
 docker pull nimrahsaif/notes-backend:1.0
 docker pull nimrahsaif/notes-frontend:1.0
 ```
-To run the published images without building (only `compose.deploy.yaml` and a `.env` are needed):
+
+To build the images from source with the Dockerfiles instead (for example after changing the code):
 
 ```bash
-docker compose -f compose.deploy.yaml up -d
+docker build -t nimrahsaif/notes-backend:1.0 ./backend
+docker build -t nimrahsaif/notes-frontend:1.0 ./frontend
+docker compose up -d
 ```
-
-For development, `docker-compose.yaml` uses `build:` so changes are built from source. A machine that only needs to run the app can use `image:` entries instead, and needs just a compose file and a `.env`, with no source code.
 
 ## API
 
@@ -171,7 +173,7 @@ For development, `docker-compose.yaml` uses `build:` so changes are built from s
 ```bash
 docker compose logs -f backend          # follow logs of one service
 docker compose ps -a                    # include stopped containers
-docker compose up -d --build            # rebuild after code changes
+docker compose exec backend sh          # open a shell inside a running container
 docker compose config --quiet           # validate the compose file without printing values
 docker images                           # compare image sizes
 ```
