@@ -61,7 +61,7 @@ Browser --> frontend (nginx) --> backend (Express) --> mongo (MongoDB)
 **Prerequisites:** Docker with Docker Compose v2 (`docker compose version`).
 
 ```bash
-git clone https://github.com/Nimrah-dev/docker-compose-project.git
+git clone https://github.com/Nimrah-dev/mern-notes-docker-compose.git
 cd docker-compose-project
 
 # create the .env file with a random password (see .env.example)
